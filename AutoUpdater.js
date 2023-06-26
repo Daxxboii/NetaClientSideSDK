@@ -52,5 +52,10 @@ async function DownloadAllOrMissingImages(data, dir) {
     console.log('UpdateInfo.json has been updated.');
 }
 
+/*
+const data = [
+    { "filename":"file1.jpg", "UID":"0101010", "URI":"https://example.com/file1.jpg" },
+    { "filename":"file2.jpg", "UID":"10101010", "URI":"https://example.com/file2.jpg" },
+];*/
 
 
