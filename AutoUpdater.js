@@ -2,7 +2,16 @@ const fs = require('fs');
 const axios = require('axios');
 const path = require('path');
 
-//Use Jacob's Signed Request script to fetch the update data from the server
+const Handler = require("HttpHandler.js");
+
+const KVendpoint = "url";//TBD
+
+//Use Jacob's Signed Request script instead of this function to fetch the update data from the server
+async function Update() {
+    var params = {"key":AutoUpdaterJsonFile};
+    var data = await Handler.makeSignedPostRequest(KVendpoint,token,params);
+    DownloadAllOrMissingImages(data, "./downloads");//TBD
+}
 
 async function DownloadAllOrMissingImages(data, dir) {
     if (!fs.existsSync(dir)) {
@@ -58,4 +67,4 @@ const data = [
     { "filename":"file2.jpg", "UID":"10101010", "URI":"https://example.com/file2.jpg" },
 ];*/
 
-
+module.exports = Update;
