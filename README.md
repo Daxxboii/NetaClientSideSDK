@@ -3,6 +3,7 @@
 ## What is this package?
 
 * This folder contains all the client side code for Ver-Quien-Te-Gusta-LLC (Neta app)
+>Note : The entire SDK is  meant to be imported into the utils folder
 
 ## What does it include?
 
