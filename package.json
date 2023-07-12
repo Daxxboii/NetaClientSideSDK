@@ -1,7 +1,7 @@
 {
   "name": "fileautoupdater",
   "version": "1.0.0",
-  "description": "",
+  "description": "* This folder contains all the client side code for Ver-Quien-Te-Gusta-LLC (Neta app)\r >Note : The entire SDK is  meant to be imported into the utils folder",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/Daxxboii/FileAutoUpdater/issues"
   },
-  "homepage": "https://github.com/Daxxboii/FileAutoUpdater#readme"
+  "homepage": "https://github.com/Daxxboii/FileAutoUpdater#readme",
+  "dependencies": {
+    "aws4": "^1.12.0",
+    "axios": "^1.4.0"
+  }
 }
