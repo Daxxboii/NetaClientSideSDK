@@ -7,13 +7,13 @@ const Handler = require("HttpHandler.js");
 const KVendpoint = "url";//TBD
 
 //Use Jacob's Signed Request script instead of this function to fetch the update data from the server
-async function Update() {
+async function fetch() {
     var params = {"key":AutoUpdaterJsonFile};
     var data = await Handler.makeSignedPostRequest(KVendpoint,token,params);
-    DownloadAllOrMissingImages(data, "./downloads");//TBD
+    downloadAllOrMissingImages(data, "./downloads");//TBD
 }
 
-async function DownloadAllOrMissingImages(data, dir) {
+async function downloadAllOrMissingImages(data, dir) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -67,4 +67,4 @@ const data = [
     { "filename":"file2.jpg", "UID":"10101010", "URI":"https://example.com/file2.jpg" },
 ];*/
 
-module.exports = Update;
+module.exports = fetch();
