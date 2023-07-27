@@ -5,6 +5,7 @@ const AxiosSigned = require("./AxiosSigned.js");
 import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import jwt from 'jsonwebtoken';
 
+const KV = require("./KV.js");
 const crypto = require('crypto');
 
 function decryptAES256(encryptedText, key) {
@@ -61,12 +62,30 @@ async function submitSchool(geohash) {
 
 async function submitPhoneNumber(phoneNumber) {
     Cache.set("phoneNumber", phoneNumber)
+    const OTPTimeout = await KV.fetch("otpTTL"); // in milliseconds
     const url = endpoints["/verifypn/sendotp"];
     const qstring = { phoneNumber };
     const response = await AxiosSigned.get(url, undefined, qstring);
+    StartCountDown(OTPTimeout);
     return response.data.success;
 }
 
+function StartCountDown(milliseconds) {
+  console.log(`Starting countdown for ${milliseconds} milliseconds...`);
+
+  // Start the countdown
+  let remainingMilliseconds = milliseconds;
+  const timer = setInterval(() => {
+    remainingMilliseconds -= 1000; // Subtract 1000 milliseconds = 1 second
+    console.log(remainingMilliseconds);
+
+    if (remainingMilliseconds <= 0) {
+      console.log("Countdown finished!");
+      clearInterval(timer);
+    }
+  }, 1000); // Repeat every 1000 milliseconds = 1 second
+}
+ 
 async function submitOTP(phoneNumber, otp) {
     const url = endpoints["/verifypn/verifyotp"];
     const qstring = { otp };
