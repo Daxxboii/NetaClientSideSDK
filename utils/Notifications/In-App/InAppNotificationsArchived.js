@@ -1,7 +1,14 @@
 const Ably = require("ably");
 let timer;
+const KV = require("../../KV.js");
 
-const realtime = new Ably.Realtime("V2GB_A.M-qo9w:hMGmmyIjHoiO-pmouaqOp2PAJ2W0vpdbkrEbb6sChjo");
+var realtime;
+async function SetupAbly(){
+    const AblyKey = await KV.fetch("AblyAPIClientKey");
+    realtime = new Ably.Realtime(AblyKey);
+}
+
+SetupAbly();
 
 const decryption = require("../../Decryption.js");
 
