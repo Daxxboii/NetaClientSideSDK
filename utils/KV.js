@@ -1,8 +1,6 @@
-var HttpHandler = require("./HttpHandler");
-
-const KV_endpoint = "url";//TBD
-const token = "token";//TBD
-
+const AxiosSigned = require("./AxiosSigned.js");
+const Endpoints = require("./Endpoints.js")
+const endpoint = "https://replace_with_endpoint/getKV"
 
 async function fetch(key) {
     var params = undefined
@@ -11,7 +9,7 @@ async function fetch(key) {
     } else {
         params = {"keys":key}
     }
-    return await HttpHandler.makeSignedPostRequest(KV_endpoint,token,params);
+    return await AxiosSigned.get({uri : endpoint, queryString : params})
 } 
 
 module.exports = { fetch };
