@@ -3,6 +3,7 @@ let timer;
 const KV = require("../../KV.js");
 
 var realtime;
+var channel;
 async function SetupAbly(){
     const AblyKey = await KV.fetch("AblyAPIClientKey");
     realtime = new Ably.Realtime(AblyKey);
@@ -18,7 +19,7 @@ function setupInAppNotifications(transactionID,encryptionKey) {
 
     // If the connection is not already established, connect to Ably and set up the subscription
     if (realtime.connection.state !== 'connected' && realtime.connection.state !== 'connecting') {
-        const channel = realtime.channels.get(transactionID);
+        channel = realtime.channels.get(transactionID);
         channel.subscribe(async (message) => {
             const data = await decryption.decrypt(message.data,encryptionKey);
             data = JSON.parse(data);
@@ -26,6 +27,10 @@ function setupInAppNotifications(transactionID,encryptionKey) {
             //do something with the data
         });
     }
+}
+
+function removeListener(){
+    channel.unsubscribe();
 }
 
 function tearDownInAppNotifications() {
@@ -36,4 +41,4 @@ function tearDownInAppNotifications() {
     }, 60000);
 }
 
-module.exports = {setupInAppNotifications,tearDownInAppNotifications};
+module.exports = {setupInAppNotifications,tearDownInAppNotifications,removeListener};
