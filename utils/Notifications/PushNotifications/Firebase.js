@@ -12,7 +12,7 @@ const firebaseConfig = {
   messagingSenderId: "your-messaging-sender-id",
   appId: "your-app-id",
 };
-
+ 
 firebase.initializeApp(firebaseConfig);
 
 export const messaging = firebase.messaging();

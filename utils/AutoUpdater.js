@@ -1,19 +1,14 @@
 const fs = require('fs');
 const axios = require('axios');
 const path = require('path');
+const crypto = require('crypto');
+const KV = require('./KV.js')
 
-const Handler = require("HttpHandler.js");
-
-const KVendpoint = "url";//TBD
-
-//Use Jacob's Signed Request script instead of this function to fetch the update data from the server
-async function Update() {
-    var params = {"key":AutoUpdaterJsonFile};
-    var data = await Handler.makeSignedPostRequest(KVendpoint,token,params);
-    DownloadAllOrMissingImages(data, "./downloads");//TBD
+async function fetch() {
+    downloadAllOrMissingImages(JSON.parse(await KV.fetch("Assets").data.value), "./downloads");
 }
 
-async function DownloadAllOrMissingImages(data, dir) {
+async function downloadAllOrMissingImages(data, dir) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -26,16 +21,15 @@ async function DownloadAllOrMissingImages(data, dir) {
     const updatedUpdateInfo = { files: [] };
     
     for (const fileInfo of data) {
-        const { filename, UID, URI } = fileInfo;
+        const { filename, UID, URI , serverHash } = fileInfo;
         const filePath = path.join(dir, filename);
-
-        // Check if file marked as downloaded is deleted
-        const fileInfoInUpdateInfo = updateInfo.files.find(file => file.UID === UID);
-        if (fileInfoInUpdateInfo && fileInfoInUpdateInfo.status === true && !fs.existsSync(filePath)) {
-            console.log(`File ${filename} was marked as downloaded but is missing. Attempting to re-download...`);
+        let shouldDownload = true;
+        if (fs.existsSync(filePath)) {
+            const localHash = await getFileHash(filePath);
+            shouldDownload = serverHash !== localHash;
         }
 
-        if (!fs.existsSync(filePath) || (fileInfoInUpdateInfo && fileInfoInUpdateInfo.status === true && !fs.existsSync(filePath))) {
+        if (shouldDownload) {
             try {
                 console.log(`Downloading ${filename} from ${URI}`);
                 const response = await axios.get(URI, { responseType: 'stream' });
@@ -54,17 +48,22 @@ async function DownloadAllOrMissingImages(data, dir) {
             }
         } else {
             // If the file exists and its status hasn't changed, we keep the previous status
-            updatedUpdateInfo.files.push(fileInfoInUpdateInfo);
+            updatedUpdateInfo.files.push({ ...fileInfo, status: true });
         }
     }
     fs.writeFileSync(path.join(dir, 'UpdateInfo.json'), JSON.stringify(updatedUpdateInfo, null, 2));
     console.log('UpdateInfo.json has been updated.');
 }
 
-/*
-const data = [
-    { "filename":"file1.jpg", "UID":"0101010", "URI":"https://example.com/file1.jpg" },
-    { "filename":"file2.jpg", "UID":"10101010", "URI":"https://example.com/file2.jpg" },
-];*/
+async function getFileHash(path) {
+    return new Promise((resolve, reject) => {
+        const hash = crypto.createHash('sha256');
+        const stream = fs.createReadStream(path);
+        
+        stream.on('data', (data) => hash.update(data));
+        stream.on('end', () => resolve(hash.digest('hex')));
+        stream.on('error', (err) => reject(err));
+    });
+}
 
-module.exports = Update;
+module.exports = fetch();

@@ -17,8 +17,6 @@ const YourComponent = () => {
     navigator.serviceWorker.addEventListener("message", (message) => console.log(message));
 
     messaging.onMessage((payload) => {
-      console.log("Message received. ", payload);
-      // ...
     });
   }, []);
 
