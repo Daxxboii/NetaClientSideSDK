@@ -21,16 +21,8 @@ async function downloadAllOrMissingImages(data, dir) {
     const updatedUpdateInfo = { files: [] };
     
     for (const fileInfo of data) {
-        const { filename, UID, URI } = fileInfo;
+        const { filename, UID, URI , serverHash } = fileInfo;
         const filePath = path.join(dir, filename);
-
-        let serverHash = null;
-        try {
-            serverHash = (await KV.fetch(UID)).data.value;
-        } catch(err) {
-            console.error(`Error fetching hash from KV store for ${filename}:`, err.message);
-        }
-
         let shouldDownload = true;
         if (fs.existsSync(filePath)) {
             const localHash = await getFileHash(filePath);

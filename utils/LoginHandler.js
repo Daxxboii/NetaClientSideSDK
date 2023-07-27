@@ -2,6 +2,8 @@ const Cache = require("./Cache.js");
 const Endpoints = require("./Endpoints.js");
 const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
 const AxiosSigned = require("./AxiosSigned.js");
+import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
+import jwt from 'jsonwebtoken';
 
 const crypto = require('crypto');
 
@@ -58,6 +60,7 @@ async function submitSchool(geohash) {
 }
 
 async function submitPhoneNumber(phoneNumber) {
+    Cache.set("phoneNumber", phoneNumber)
     const url = endpoints["/verifypn/sendotp"];
     const qstring = { phoneNumber };
     const response = await AxiosSigned.get(url, undefined, qstring);
@@ -67,7 +70,7 @@ async function submitPhoneNumber(phoneNumber) {
 async function submitOTP(phoneNumber, otp) {
     const url = endpoints["/verifypn/verifyotp"];
     const qstring = { otp };
-    const response = await AxiosSigned.get(url, Cache.get('jwt'), qstring);
+    const response = await AxiosSigned.get(url, null, qstring);
     if (response.data.success) {
         Cache.set("otp", otp);
         onboardingScreenIndex++;
@@ -112,14 +115,14 @@ async function submitGender(gender) {
         school: Cache.get("school"),
         otp: Cache.get("otp")
     };
-    const response = await AxiosSigned.get(url, Cache.get('jwt'), qstring);
+    const response = await AxiosSigned.get(url, null, qstring);
     const topicName = response.data.transactionId;
-    Alby.SetupAlbyWithChannel(topicName, handleSubmitProfileResponseAlby);
+    Alby.setupAlbyWithChannel(topicName, handleSubmitProfileResponseAlby);
 }
 
 async function checkSubmitProfile() {
     const url = endpoints["/submitProfile/fetchStatus"];
-    const response = await AxiosSigned.get(url, Cache.get('jwt'));
+    const response = await AxiosSigned.get(url);
     if (response.data.resolved) {
         onboardingScreenIndex++;
         Cache.set("onboardingScreenIndex", onboardingScreenIndex);
@@ -142,18 +145,65 @@ async function back() {
     }
 }
 
-async function login(username, password) {
+var vals = await KV.fetch(["UserPoolId", "ClientId"])
+const poolData = {
+    UserPoolId : vals[0].value, // Your user pool id here
+    ClientId : vals[1].value// Your client id here
+  };
+  
+  async function login(username = null , password = null) {
+    if (username == null) username = Cache.getString("phoneNumber");
+    if (password == null) password = Cache.getString("password");
+  
+    var jwt = Cache.getString("jwt");
+    
+    // Decode the token to check if it's expired
+    const decodedJwt = jwt ? jwt.decode(jwt) : null;
+    const isJwtExpired = decodedJwt ? jwt.isTokenExpired(decodedJwt) : true;
+  
+    if (!jwt || isJwtExpired) {
+      const userPool = new CognitoUserPool(poolData);
+      const userData = { Username : username, Pool : userPool };
+      const cognitoUser = new CognitoUser(userData);
+  
+      const authenticationData = { Username : username, Password : password };
+      const authenticationDetails = new AuthenticationDetails(authenticationData);
+  
+      jwt = await new Promise((resolve, reject) => {
+        cognitoUser.authenticateUser(authenticationDetails, {
+          onSuccess: (result) => {
+            resolve(result.getIdToken().getJwtToken());
+          },
+          onFailure: (err) => {
+            reject(err);
+          }
+        });
+      });
+  
+      // Cache the jwt token
+      Cache.set("jwt", jwt);
+    }
+  
     const url = endpoints["/login"];
-    const qstring = { jwt: Cache.get('jwt') };
-    const response = await AxiosSigned.get(url, qstring);
+    const response = await AxiosSigned.get(url, jwt);
     Cache.set("albyChannelId", response.data.albyChannelId);
     Cache.set("albyDecryptionKey", response.data.albyDecryptionKey);
-    Alby.SetupAlbyWithChannel(response.data.albyChannelId, handleAlbyData);
+    Alby.setupAlbyWithChannel(response.data.albyChannelId, handleAlbyData);
     return response.data.polls;
+  }
+
+async function logout() {
+    /// reset isOnboarding to false and onboardingIndex to 0
+    /// as well as jwt, otp and anything else set in cache
+}
+
+async function logoutAndDelete() {
+    /// TODO: delete all data in cache
+    logout();
 }
 
 async function handleAlbyData(data) {
-    data = crypto.decryptAES256(data, albyDecryptionKey)
+    data = decryptAES256(data, albyDecryptionKey)
 }
 
 module.exports = {
