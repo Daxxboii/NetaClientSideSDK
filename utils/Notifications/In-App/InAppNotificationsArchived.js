@@ -13,21 +13,40 @@ SetupAbly();
 
 const decryption = require("../../Decryption.js");
 
-function setupInAppNotifications(transactionID,encryptionKey) {
+// Keep track of subscribed channels
+const subscribedChannels = new Set();
+
+function setupInAppNotifications(transactionID, encryptionKey) {
     // Cancel any pending disconnection
     if (timer) clearTimeout(timer);
 
     // If the connection is not already established, connect to Ably and set up the subscription
-    if (realtime.connection.state !== 'connected' && realtime.connection.state !== 'connecting') {
-        channel = realtime.channels.get(transactionID);
-        channel.subscribe(async (message) => {
-            const data = await decryption.decrypt(message.data,encryptionKey);
-            data = JSON.parse(data);
-            console.log("Received: " + data);
-            //do something with the data
-        });
+    if (
+        realtime.connection.state !== 'connected' &&
+        realtime.connection.state !== 'connecting'
+    ) {
+        if (!subscribedChannels.has(transactionID)) {
+            const channel = realtime.channels.get(transactionID);
+            channel.subscribe(async (message) => {
+                const data = await decryption.decrypt(message.data, encryptionKey);
+                try {
+                    const parsedData = JSON.parse(data);
+                    console.log("Received: ", parsedData);
+                    // Do something with the data
+                } catch (error) {
+                    console.error("Error parsing the received data:", error);
+                }
+            });
+
+            // Mark the channel as subscribed
+            subscribedChannels.add(transactionID);
+        } else {
+            console.warn("Already subscribed to channel with ID:", transactionID);
+            return;
+        }
     }
 }
+
 
 function removeListener(){
     channel.unsubscribe();

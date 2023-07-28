@@ -4,8 +4,11 @@ const path = require('path');
 const crypto = require('crypto');
 const KV = require('./KV.js')
 
+const isTesting = true;
 async function fetch() {
-    downloadAllOrMissingImages(JSON.parse(await KV.fetch("Assets").data.value), "./downloads");
+    
+    if(!isTesting)downloadAllOrMissingImages(JSON.parse(await KV.fetch("Assets").data.value), "./downloads");
+    else downloadAllOrMissingImages([{filename:"Daxx.png",UID:0,URI:"https://i.pinimg.com/736x/1d/99/e7/1d99e7d885f3257fd2294529b11501cf.jpg",serverHash:":3"}], "./test/downloads");
 }
 
 async function downloadAllOrMissingImages(data, dir) {
@@ -65,5 +68,5 @@ async function getFileHash(path) {
         stream.on('error', (err) => reject(err));
     });
 }
-
+fetch()
 module.exports = fetch();

@@ -1,6 +1,6 @@
 const AxiosSigned = require("./AxiosSigned.js");
 const Endpoints = require("./Endpoints.js")
-const endpoint = "https://replace_with_endpoint/getKV"
+const endpoint = "https://localhost:3000/getKV"
 
 async function fetch(key) {
     var params = undefined
