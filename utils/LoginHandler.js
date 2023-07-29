@@ -2,10 +2,81 @@ const Cache = require("./Cache.js");
 const Endpoints = require("./Endpoints.js");
 const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
 const AxiosSigned = require("./AxiosSigned.js");
+import { Platform } from 'react-native';
 import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import jwt from 'jsonwebtoken';
 
 const crypto = require('crypto');
+
+async function inviteUser(phoneNumber) {
+    try {
+        // Check if onboarding is still happening
+        if (isOnboarding) {
+            console.error("User is still onboarding");
+            return;
+        }
+
+        // Fetch jwt from cache
+        const jwt = Cache.getString("jwt");
+        if (!jwt) {
+            console.error("No jwt in the cache");
+            return;
+        }
+
+        // Prepare request url
+        const url = endpoints["/invitations/invite"];
+
+        // Prepare axios configuration
+        const axiosConfig = {
+            headers: {
+                Authorization: 'Bearer ' + jwt
+            },
+            params: {
+                phoneNumber
+            }
+        };
+
+        // Send get request
+        const response = await AxiosSigned.get(url, axiosConfig);
+
+        if (response.data.success) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, message: response.data.message || "An error occurred while inviting the user" };
+        }
+
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: error.message || "An error occurred while inviting the user" };
+    }
+}
+
+
+async function fetchInvitationData() {
+    if (isOnboarding) return;
+    try {
+        const phoneNumber = Cache.getString("phoneNumber");
+        if (!phoneNumber) {
+            console.error("No phone number in the cache");
+            return;
+        }
+
+        const url = endpoints["/invitations/fetch"];
+        const response = await AxiosSigned.get(url, { phoneNumber });
+
+        if (response.data.success) {
+            const encryptedLink = response.data.link;
+            const link = decryptAES256(encryptedLink, phoneNumber); //Assuming phone number is the key here
+            return { success: true, link };
+        } else {
+            return { success: false, message: response.data.message || "No link found for this phone number" };
+        }
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: error.message || "An error occurred while fetching the invitation data" };
+    }
+}
+
 
 function decryptAES256(encryptedText, key) {
     const iv = encryptedText.slice(0, 16);
@@ -153,7 +224,8 @@ async function submitGender(gender) {
         gender: Cache.get("gender"),
         age: Cache.get("age"),
         school: Cache.get("school"),
-        otp: Cache.get("otp")
+        otp: Cache.get("otp"),
+        platform: Platform.OS
     };
     const response = await AxiosSigned.get(url, null, qstring);
     if (response.data.alreadySubmitted) {
