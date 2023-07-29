@@ -255,7 +255,8 @@ async function refresh(screen = 'home') {
     await _login();
     const jwt = Cache.get("jwt");
     const url = endpoints["/refresh"];
-    const response = await AxiosSigned.get(url, {jwt, requestedScreen : screen});
+    const pageKey = Cache.get("inboxData").pageKey;
+    const response = await AxiosSigned.get(url, {jwt, requestedScreen : screen,page:pageKey});
 
     // Cache and setup Alby
     Cache.set("albyChannelId", response.data.albyChannelId);
@@ -273,7 +274,8 @@ async function refresh(screen = 'home') {
         Cache.set("inboxData", inbox);
         Cache.set("profileData", {[response.requestedProfile]: profile});
         Cache.set("inviteData", invite);
-        return { home, add, inbox, profile, invite, albyChannelId, albyDecryptionKey };
+        Cache.set("FriendRequests", response.data.profile.friendRequests.count);
+        return { home, add, inbox, profile, invite, albyChannelId, albyDecryptionKey, FriendRequestsCount: response.data.profile.friendRequests.count};
     } else if (screen === 'home') {
         // Cache data
         Cache.set("homeData", response.data.data);
@@ -285,6 +287,7 @@ async function refresh(screen = 'home') {
     } else if (screen === 'inbox') {
         // Cache data
         Cache.set("inboxData", response.data.data);
+        Cache.set("pageKey", response.data.pageKey)
         return response.data.data;
     } else if (screen === 'profile') {
         if (req.query.requestedProfile == undefined) {
