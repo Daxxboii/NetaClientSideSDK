@@ -8,7 +8,9 @@ import jwt from 'jsonwebtoken';
 
 const crypto = require('crypto');
 
-async function inviteUser(phoneNumber) {
+/// invoked to invite a user
+/// context = "add", "invite", "share"
+async function inviteUser(phoneNumber, context = "add") {
     try {
         // Check if onboarding is still happening
         if (isOnboarding) {
@@ -32,7 +34,8 @@ async function inviteUser(phoneNumber) {
                 Authorization: 'Bearer ' + jwt
             },
             params: {
-                phoneNumber
+                invitee : phoneNumber,
+                context
             }
         };
 
@@ -64,18 +67,27 @@ async function fetchInvitationData() {
         const url = endpoints["/invitations/fetch"];
         const response = await AxiosSigned.get(url, { phoneNumber });
 
-        if (response.data.success) {
-            const encryptedLink = response.data.link;
-            const link = decryptAES256(encryptedLink, phoneNumber); //Assuming phone number is the key here
-            return { success: true, link };
+        if (response.data) {
+            // We are assuming here that 'data' is an array of objects containing the active links
+            const decryptedData = response.data.map(activeLink => {
+                // Decrypt the link field
+                const decryptedLink = decryptAES256(activeLink.link, phoneNumber);
+                // Return a new object with all previous fields and the decrypted link
+                return {
+                    ...activeLink,
+                    link: decryptedLink
+                };
+            });
+            return { success: true, data: decryptedData };
         } else {
-            return { success: false, message: response.data.message || "No link found for this phone number" };
+            return { success: false, message: "No data found for this phone number" };
         }
     } catch (error) {
         console.error(error);
         return { success: false, message: error.message || "An error occurred while fetching the invitation data" };
     }
 }
+
 
 
 function decryptAES256(encryptedText, key) {
