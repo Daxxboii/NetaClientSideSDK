@@ -1,8 +1,12 @@
-const Cache = require("./Cache.js");
-const Endpoints = require("./Endpoints.js");
+const Cache = require("../Cache.js");
+const Endpoints = require("../Endpoints.js");
 const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
+<<<<<<< HEAD:utils/LoginHandler.js
 const AxiosSigned = require("./AxiosSigned.js");
 import { Platform } from 'react-native';
+=======
+const AxiosSigned = require("../AxiosSigned.js");
+>>>>>>> a78ec1fa9c273efaa7b7bc50b3959cb775c30d36:utils/User Based/RegistrationFlow.js
 import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import jwt from 'jsonwebtoken';
 
@@ -333,104 +337,7 @@ async function fetchAddFriendsOnboarding() {
 
 }
 
-/// invoked by the user to refresh with either
-/// home, all, add, inbox, profile, invite
-async function refresh(screen = 'home') {
-    await _login();
-    const jwt = Cache.get("jwt");
-    const url = endpoints["/refresh"];
-    const response = await AxiosSigned.get(url, {jwt, requestedScreen : screen});
 
-    // Cache and setup Alby
-    Cache.set("albyChannelId", response.data.albyChannelId);
-    Cache.set("albyDecryptionKey", response.data.albyDecryptionKey);
-    Alby.setupAlbyWithChannel(response.data.albyChannelId, handleAlbyData);
-
-    // Return the data based on the requested screen
-    if (screen === 'all') {
-        const {
-            home, add, inbox, profile, invite, albyChannelId, albyDecryptionKey
-        } = response.data;
-        // Cache data
-        Cache.set("homeData", home);
-        Cache.set("addData", add);
-        Cache.set("inboxData", inbox);
-        Cache.set("profileData", {[response.requestedProfile]: profile});
-        Cache.set("inviteData", invite);
-        return { home, add, inbox, profile, invite, albyChannelId, albyDecryptionKey };
-    } else if (screen === 'home') {
-        // Cache data
-        Cache.set("homeData", response.data.data);
-        return response.data.data;
-    } else if (screen === 'add') {
-        // Cache data
-        Cache.set("addData", response.data.data);
-        return response.data.data;
-    } else if (screen === 'inbox') {
-        // Cache data
-        Cache.set("inboxData", response.data.data);
-        return response.data.data;
-    } else if (screen === 'profile') {
-        if (req.query.requestedProfile == undefined) {
-            // Cache data
-            Cache.set("profileData", {[response.requestedProfile]: response.data.userData});
-            return response.data.userData;
-        }
-        // Cache data
-        Cache.set("profileData", {[response.requestedProfile]: response.data.data});
-        return response.data.data;
-    } else if (screen === 'invite') {
-        // Cache data
-        Cache.set("inviteData", response.data.data);
-        return response.data.data;
-    }
-}
-
-
-
-var vals = await KV.fetch(["UserPoolId", "ClientId"])
-const poolData = {
-    UserPoolId : vals[0].value, // Your user pool id here
-    ClientId : vals[1].value// Your client id here
-  };
-
-  var loginFuncCache = JSON.parse(Cache.getString("loginFuncCache"))
-
-  /// called internally to authenticate the jwet only after onboarding complete
-  async function _login() {
-    if (isOnboarding) return;
-    if (username == null) username = Cache.getString("phoneNumber");
-    if (password == null) password = Cache.getString("otp");
-  
-    var jwt = Cache.getString("jwt");
-    
-    // Decode the token to check if it's expired
-    const decodedJwt = jwt ? jwt.decode(jwt) : null;
-    const isJwtExpired = decodedJwt ? jwt.isTokenExpired(decodedJwt) : true;
-  
-    if (!jwt || isJwtExpired) {
-      const userPool = new CognitoUserPool(poolData);
-      const userData = { Username : username, Pool : userPool };
-      const cognitoUser = new CognitoUser(userData);
-  
-      const authenticationData = { Username : username, Password : password };
-      const authenticationDetails = new AuthenticationDetails(authenticationData);
-  
-      jwt = await new Promise((resolve, reject) => {
-        cognitoUser.authenticateUser(authenticationDetails, {
-          onSuccess: (result) => {
-            resolve(result.getIdToken().getJwtToken());
-          },
-          onFailure: (err) => {
-            reject(err);
-          }
-        });
-      });
-  
-      // Cache the jwt token
-      Cache.set("jwt", jwt);
-    }
-  }
   
   async function login() {
     await _login();

@@ -2,6 +2,8 @@ const Ably = require("ably");
 let timer;
 const KV = require("../../KV.js");
 
+const cache = require("../../Cache.js")
+
 var realtime;
 var channel;
 async function SetupAbly(){
@@ -31,6 +33,7 @@ function setupInAppNotifications(transactionID, encryptionKey) {
                 const data = await decryption.decrypt(message.data, encryptionKey);
                 try {
                     const parsedData = JSON.parse(data);
+                    if(parsedData.inbox!=null) Cache.set("inboxData",parsedData);//TODO:ask jake to update notifs to include inbox variable when necessary
                     console.log("Received: ", parsedData);
                     // Do something with the data
                 } catch (error) {
