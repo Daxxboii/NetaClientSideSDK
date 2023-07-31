@@ -222,21 +222,42 @@ async function submitPFP(filePath) {
     }
 }
 
-/// invoke to get any cached data for the app
-async function fetchAddFriendsOnboarding() {
+async function fetchAddFriendsOnboarding(pagenumber = 1) {
     if (onboardingScreenIndex != 10) return;
     onboardingScreenIndex++;
     Cache.set("onboardingScreenIndex", onboardingScreenIndex);
-    /// TODO: implement and cache
+
     const jwt = Cache.get("jwt");
     const url = endpoints["/onboarding/addfriends"];
-    const response = await AxiosSigned.get(url, jwt);
+    const response = await AxiosSigned.get(url, jwt, {pagenumber});
     if (response.success)
     {
-        Cache.set("addFriendsOnboarding", JSON.stringify(response.data))
-        return response.data
+        Cache.set("addFriendsOnboarding", JSON.stringify(response.data));
+        Cache.set("addFriendsOnboardingNextPage", response.nextPage);
+        return response.data;
     }
 }
+
+// auto page
+async function fetchAllAddFriendsOnboardingPages() {
+    let pagenumber = 1;
+    let data = [];
+
+    while (true) {
+        const pageData = await fetchAddFriendsOnboarding(pagenumber);
+
+        if (!pageData || pageData.length === 0) {
+            break;
+        }
+
+        data = data.concat(pageData);
+        pagenumber = Cache.get("addFriendsOnboardingNextPage");
+    }
+
+    return data;
+}
+
+
 
 module.exports = {
     fetchCache,
@@ -247,7 +268,7 @@ module.exports = {
     submitAge,
     submitGrade,
     fetchSchools,
-    submitSchool,
+    submitSchool, fetchAllAddFriendsOnboardingPages,
     submitPhoneNumber,
     submitOTP,
     submitFirstName,
