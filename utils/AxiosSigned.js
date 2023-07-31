@@ -81,7 +81,46 @@ async function post(uri, jwt = null, qString = null, body = null) {
     }
 }
 
-module.exports = {get, post}
+async function put(data) {
+    const {uri, jwt, body, queryString, queryStr, params} = data;
+    if (queryString != undefined) {
+        queryStr = queryString;
+        params = queryString;
+    }
+    if (queryStr != undefined) {
+        queryString = queryStr;
+        params = queryStr;
+    }
+    if (params != undefined) {
+        queryStr = params;
+        queryString = params;
+    }
+    return await put(uri, jwt, queryStr, body)
+}
+
+async function put(uri, jwt = null, qString = null, body = null) {
+    let options = {
+        method: 'PUT',
+        url: uri,
+        params: qString,  // query string
+        data: body,  // body data
+    };
+
+    // Add authorization header if jwt token is provided
+    if (jwt) {
+        options.headers = {
+            'Authorization': jwt
+        };
+    }
+
+    try {
+        const response = await axios(options);
+        return response.data;
+    } catch (error) {
+        console.error(`Error in PUT request: ${error}`);
+        throw error;
+    }
+}
 
 
-module.exports = {get}
+module.exports = {get, post, put}

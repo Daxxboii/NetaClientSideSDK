@@ -14,7 +14,7 @@ fetchEndpoints();
 
 /// invoked by the user to refresh with either
 /// home, all, add, inbox, profile, invite
-async function refresh(screen = "home") {
+async function fetch(screen = "home") {
   await _login();
   const jwt = Cache.get("jwt");
   const url = endpoints["/refresh"];
@@ -90,3 +90,5 @@ async function refresh(screen = "home") {
     return response.data.data;
   }
 }
+
+exports.module = {fetch}

@@ -1,115 +1,17 @@
 const Cache = require("../Cache.js");
 const Endpoints = require("../Endpoints.js");
 const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
-<<<<<<< HEAD:utils/LoginHandler.js
-const AxiosSigned = require("./AxiosSigned.js");
-import { Platform } from 'react-native';
-=======
 const AxiosSigned = require("../AxiosSigned.js");
->>>>>>> a78ec1fa9c273efaa7b7bc50b3959cb775c30d36:utils/User Based/RegistrationFlow.js
 import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import jwt from 'jsonwebtoken';
-
-const crypto = require('crypto');
-
-/// invoked to invite a user
-/// context = "add", "invite", "share"
-async function inviteUser(phoneNumber, context = "add") {
-    try {
-        // Check if onboarding is still happening
-        if (isOnboarding) {
-            console.error("User is still onboarding");
-            return;
-        }
-
-        // Fetch jwt from cache
-        const jwt = Cache.getString("jwt");
-        if (!jwt) {
-            console.error("No jwt in the cache");
-            return;
-        }
-
-        // Prepare request url
-        const url = endpoints["/invitations/invite"];
-
-        // Prepare axios configuration
-        const axiosConfig = {
-            headers: {
-                Authorization: 'Bearer ' + jwt
-            },
-            params: {
-                invitee : phoneNumber,
-                context
-            }
-        };
-
-        // Send get request
-        const response = await AxiosSigned.get(url, axiosConfig);
-
-        if (response.data.success) {
-            return { success: true, data: response.data };
-        } else {
-            return { success: false, message: response.data.message || "An error occurred while inviting the user" };
-        }
-
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: error.message || "An error occurred while inviting the user" };
-    }
-}
-
-
-async function fetchInvitationData() {
-    if (isOnboarding) return;
-    try {
-        const phoneNumber = Cache.getString("phoneNumber");
-        if (!phoneNumber) {
-            console.error("No phone number in the cache");
-            return;
-        }
-
-        const url = endpoints["/invitations/fetch"];
-        const response = await AxiosSigned.get(url, { phoneNumber });
-
-        if (response.data) {
-            // We are assuming here that 'data' is an array of objects containing the active links
-            const decryptedData = response.data.map(activeLink => {
-                // Decrypt the link field
-                const decryptedLink = decryptAES256(activeLink.link, phoneNumber);
-                // Return a new object with all previous fields and the decrypted link
-                return {
-                    ...activeLink,
-                    link: decryptedLink
-                };
-            });
-            return { success: true, data: decryptedData };
-        } else {
-            return { success: false, message: "No data found for this phone number" };
-        }
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: error.message || "An error occurred while fetching the invitation data" };
-    }
-}
-
-
-
-function decryptAES256(encryptedText, key) {
-    const iv = encryptedText.slice(0, 16);
-    const content = encryptedText.slice(16);
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
-    
-    let decrypted = decipher.update(content, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    return decrypted;
-}
+const path = require('path');
+const mime = require('mime-types');
 
 var isOnboarding = true;
 var onboardingScreenIndex = 0;
 var endpoints;
 
-async function fetchCache() {
+async function _fetchCache() {
     isOnboarding = Cache.getBoolean("isOnboarding")
     onboardingScreenIndex = Cache.getInt("onboardingScreenIndex")
 
@@ -121,7 +23,7 @@ async function fetchEndpoints() {
     endpoints = await Endpoints.fetch();
 }
 
-fetchCache()
+_fetchCache()
 fetchEndpoints()
 
 async function submitAge(age) {
@@ -136,11 +38,6 @@ async function submitGrade(grade) {
     Cache.set("grade", grade);
     onboardingScreenIndex++;
     Cache.set("onboardingScreenIndex", onboardingScreenIndex);
-}
-
-/// invoked to fetch the schools cache or undefined
-function fetchSchoolsCache() {
-    return JSON.parse(Cache.getString("schools"))
 }
 
 async function fetchSchools(schoolName = undefined) {
@@ -280,9 +177,6 @@ async function back() {
     }
 }
 
-const path = require('path');
-const mime = require('mime-types');
-
 /// invoked by the client to submit his pfp given local path to an img
 async function submitPFP(filePath) {
     if (onboardingScreenIndex != 9) return;
@@ -315,11 +209,6 @@ async function submitPFP(filePath) {
     }
 }
 
-function fetchOnboardingAddFriendsCache()
-{
-    return JSON.parse(Cache.getString("addFriendsOnboarding"))
-}
-
 /// invoke to get any cached data for the app
 async function fetchAddFriendsOnboarding() {
     if (onboardingScreenIndex != 10) return;
@@ -334,84 +223,14 @@ async function fetchAddFriendsOnboarding() {
         Cache.set("addFriendsOnboarding", JSON.stringify(response.data))
         return response.data
     }
-
-}
-
-
-  
-  async function login() {
-    await _login();
-    jwt = Cache.get("jwt")
-  
-    const url = endpoints["/login"];
-    const response = await AxiosSigned.get(url, {jwt});
-    loginFuncCache = JSON.stringify(response.data) /// cache login resp
-    Cache.set("albyChannelId", response.data.albyChannelId);
-    Cache.set("albyDecryptionKey", response.data.albyDecryptionKey);
-    Alby.setupAlbyWithChannel(response.data.albyChannelId, handleAlbyData);
-    if (response.data.deleted != undefined) {
-        var deleteNow = response.data.deleted;
-        if (deleteNow) {
-            return logoutAndDelete()
-        } else {
-            /// TODO: handle requested deletion by showing screen
-        }
-    } else if (response.waiting) {
-        var secondsWaiting = Int.asInt(response.secondsWaiting)
-
-    // setup a timer
-    setTimeout(() => {
-        // this block of code will be executed when 'secondsWaiting' has passed
-        Cache.set('requestPolls', true);
-    }, secondsWaiting * 1000); // setTimeout takes time in milliseconds
-    } else if (response.data.polls == undefined) {
-        /// TODO: show screen that says "add friends" bc no polls are avail.
-    }
-    return response.data.polls;
-  }
-
-async function logout() {
-    isOnboarding = false;
-    onboardingScreenIndex = 0;
-    Cache.set("isOnboarding", isOnboarding)
-    Cache.set("onboardingScreenIndex", onboardingScreenIndex)
-}
-
-/// invoked when login is clicked from splash
-/// which basically invokes submit profile without any cached data
-async function loginFromStart() {
-    const response = await AxiosSigned.get(url, {phoneNumber : Cache.getString("phoneNumber")}, qstring);
-    if (response.data.alreadySubmitted) {
-        /// TODO: handle success by going to home screen
-    } else {
-        /// TODO: handle failure by allowing user to re-enter pn
-    }
-}
-
-async function logoutAndDelete() {
-    logout();
-    /// reset isOnboarding to false and onboardingIndex to 0
-    /// as well as jwt, otp and anything else set in cache
-    isOnboarding = false;
-    onboardingScreenIndex = 0;
-    Cache.set("isOnboarding", isOnboarding)
-    Cache.set("onboardingScreenIndex", onboardingScreenIndex)
-    Cache.set("otp", undefined)
-    Cache.set("phoneNumber", undefined)
-    Cache.set("firstName", undefined)
-    Cache.set("lastName", undefined)
-    Cache.set("jwt", undefined)
-    Cache.set("loginFuncCache", undefined);
-    Cache.set("schools", undefined)
-    Cache.set("requestPolls", undefined)
-}
-
-async function handleAlbyData(data) {
-    data = decryptAES256(data, Cache.getString("albyDecryptionKey"))
 }
 
 module.exports = {
+    fetchCache,
     isOnboarding,
+    submitPFP,
+    fetchAddFriendsOnboarding,
+    verifyStatus,
     submitAge,
     submitGrade,
     fetchSchools,
