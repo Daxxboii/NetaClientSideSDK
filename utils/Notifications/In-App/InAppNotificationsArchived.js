@@ -48,7 +48,7 @@ function setupInAppNotifications(transactionID, encryptionKey) {
                       Cache.set("inboxData", inboxData);
                     } else if (parsedData.friends != undefined) {
                         /// case: event from friends for this user
-                        var event = parsedData.friends.event; /// add, request, remove
+                        var event = parsedData.friends.event; /// add, request, remove, accept
                         var friend = parsedData.friends.friend
                         var message = parsedData.friends.message // display this msg
 
