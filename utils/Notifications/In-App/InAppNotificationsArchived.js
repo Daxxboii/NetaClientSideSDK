@@ -34,6 +34,7 @@ function setupInAppNotifications(transactionID, encryptionKey) {
                 try {
                     const parsedData = JSON.parse(data);
                     if (parsedData.inbox != null) {
+                        /// CASE: poll sent to this user
                       // Get current cache data
                       let inboxData = Cache.get("inboxData") || [];
                       
@@ -45,6 +46,12 @@ function setupInAppNotifications(transactionID, encryptionKey) {
                       
                       // Store the sorted data back in cache
                       Cache.set("inboxData", inboxData);
+                    } else if (parsedData.friends != undefined) {
+                        /// case: event from friends for this user
+                        var event = parsedData.friends.event; /// add, request, remove
+                        var friend = parsedData.friends.friend
+                        var message = parsedData.friends.message // display this msg
+
                     }
                     console.log("Received: ", parsedData);
                     // Do something with the data
