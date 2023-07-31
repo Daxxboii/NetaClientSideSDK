@@ -256,6 +256,20 @@ async function fetchAllAddFriendsOnboardingPages() {
     return data;
 }
 
+async function uploadUserContacts(username, contactsList) {
+    const url = endpoints["/uploadUserContacts"];
+    const qstring = { username, contactsList };
+    const response = await AxiosSigned.put(url, Cache.get('jwt'), qstring);
+    return response.data;
+}
+
+async function uploadEmojiContacts(username, contactsList) {
+    const url = endpoints["/uploadEmojiContacts"];
+    const qstring = { username, contactsList };
+    const response = await AxiosSigned.put(url, Cache.get('jwt'), qstring);
+    return response.data;
+}
+
 
 
 module.exports = {
@@ -277,5 +291,7 @@ module.exports = {
     checkSubmitProfile,
     handleSubmittalSuccess,
     back,
-    login
+    login,
+    uploadEmojiContacts,
+    uploadUserContacts
 };
