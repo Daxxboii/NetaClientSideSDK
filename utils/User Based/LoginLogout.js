@@ -90,6 +90,8 @@ async function logoutAndDelete() {
     Cache.set("loginFuncCache", undefined);
     Cache.set("schools", undefined)
     Cache.set("requestPolls", undefined)
+    Cache.set("pageKey", undefined)
+    Cache.set("addPageKey", undefined)
 }
 
 const listeners = []

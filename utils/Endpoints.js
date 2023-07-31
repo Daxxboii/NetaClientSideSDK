@@ -5,6 +5,7 @@ async function fetch() {
     if (endpoints != null) return endpoints;
     return endpoints = JSON.parse(await KV.fetch("endpoints").data.value);
 }
+fetch()
 
 
-module.exports = {fetch}
+module.exports = endpoints;

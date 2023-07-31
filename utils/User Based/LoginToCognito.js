@@ -11,6 +11,9 @@ async function fetch() {
 fetch()
 
 async function loginToCognito() {
+    /// reset pagination keys for add and inbox
+    Cache.set("pageKey", undefined);
+    Cache.set("pageKeyAdd", undefined)
     if (Cache.getBoolean("isOnboarding") === false) return; // if onboarding do nothing
 
     var phoneNumber = Cache.getString("phoneNumber");

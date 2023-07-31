@@ -4,29 +4,31 @@ const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
 const AxiosSigned = require("../AxiosSigned.js");
 import jwt from "jsonwebtoken";
 
-var endpoints;
-
 const LoginToCognito = require("./LoginToCognito")
 
 
-async function fetchEndpoints() {
-  endpoints = await Endpoints.fetch();
-}
 
 fetchEndpoints();
 
+/// TODO: LoginToCognito resets inboxData.pageKey and pageKey and addPageKey 
+
 /// invoked by the user to refresh with either
 /// home, all, add, inbox, profile, invite
+/// page is for 'add' only and is stored in cache 'nextPageKey'
 async function fetch(screen = "home") {
   await LoginToCognito();
   const jwt = Cache.get("jwt");
   const url = endpoints["/refresh"];
-  const pageKey = Cache.get("inboxData").pageKey;
-  const response = await AxiosSigned.get(url, {
+  var qStrng = {
     jwt,
     requestedScreen: screen,
-    page: pageKey,
-  });
+  }
+  if (screen == "inbox" && Cache.getString("pageKey") != undefined) {
+    qStrng.page = Cache.getString("pageKey")
+  } else if (screen == "add" && Cache.get("addPageKey") != undefined) {
+    qStrng.page = Cache.getString("addPageKey")
+  }
+  const response = await AxiosSigned.get(url, qStrng);;
 
   // Cache and setup Alby
   Cache.set("albyChannelId", response.data.albyChannelId);
@@ -67,9 +69,11 @@ async function fetch(screen = "home") {
     return response.data.data;
   } else if (screen === "add") {
     // Cache data
-    Cache.set("addData", response.data.data);
-    return response.data.data;
-  } else if (screen === "inbox") {
+    const addData = response.data.data;
+    Cache.set("addData", addData);
+    if (response.data.nextPage) Cache.set("addPageKey", response.data.nextPage);
+    return addData;
+} else if (screen === "inbox") {
     // Cache data
     Cache.set("inboxData", response.data.data);
     if (response.data.nextPageKey) Cache.set("pageKey", response.data.nextPageKey);

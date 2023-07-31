@@ -253,7 +253,6 @@ async function fetchAllAddFriendsOnboardingPages() {
         data = data.concat(pageData);
         pagenumber = Cache.get("addFriendsOnboardingNextPage");
     }
-
     return data;
 }
 
