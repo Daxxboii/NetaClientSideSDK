@@ -33,12 +33,25 @@ function setupInAppNotifications(transactionID, encryptionKey) {
                 const data = await decryption.decrypt(message.data, encryptionKey);
                 try {
                     const parsedData = JSON.parse(data);
-                    if(parsedData.inbox!=null) Cache.set("inboxData",parsedData);//TODO:ask jake to update notifs to include inbox variable when necessary
+                    if (parsedData.inbox != null) {
+                      // Get current cache data
+                      let inboxData = Cache.get("inboxData") || [];
+                      
+                      // Combine the old data with the new data
+                      inboxData = inboxData.concat(parsedData.inbox);
+                      
+                      // Sort the data in descending order by pushedTime
+                      inboxData.sort((a, b) => b.pushedTime - a.pushedTime);
+                      
+                      // Store the sorted data back in cache
+                      Cache.set("inboxData", inboxData);
+                    }
                     console.log("Received: ", parsedData);
                     // Do something with the data
-                } catch (error) {
+                  } catch (error) {
                     console.error("Error parsing the received data:", error);
-                }
+                  }
+                  
             });
 
             // Mark the channel as subscribed
