@@ -46,6 +46,8 @@ function setupInAppNotifications(transactionID, encryptionKey) {
                       
                       // Store the sorted data back in cache
                       Cache.set("inboxData", inboxData);
+
+                      Cache.set("unreadCount", (parseInt(cache.getString("unreadCount") + 1).toString())) /// another line of code from a paranoid react native programmer
                     } else if (parsedData.friends != undefined) {
                         /// case: event from friends for this user
                         var event = parsedData.friends.event; /// add, request, remove, accept

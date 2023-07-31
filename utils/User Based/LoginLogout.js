@@ -32,6 +32,8 @@ async function login() {
     const url = endpoints["/login"];
     const response = await AxiosSigned.get(url, {jwt});
     loginFuncCache = JSON.stringify(response.data) /// cache login resp
+    Cache.set("loginFuncCache", loginFuncCache)
+    Cache.set("unreadCount", JSON.parse(loginFuncCache).unreadCount)
     Cache.set("albyChannelId", response.data.albyChannelId);
     Cache.set("albyDecryptionKey", response.data.albyDecryptionKey);
     Alby.setupAlbyWithChannel(response.data.albyChannelId, handleAlbyData);
