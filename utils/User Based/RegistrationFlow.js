@@ -4,6 +4,8 @@ const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
 const AxiosSigned = require("../AxiosSigned.js");
 import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import jwt from 'jsonwebtoken';
+import Geolocation from '@react-native-community/geolocation';
+import geohash from 'latlon-geohash';
 const path = require('path');
 const mime = require('mime-types');
 
@@ -40,16 +42,26 @@ async function submitGrade(grade) {
     Cache.set("onboardingScreenIndex", onboardingScreenIndex);
 }
 
+/// TODO: get encoded geolocation from qparam 'clientlocation'
+/// and also support paging via param pageToken and use return val nextPageToken
 async function fetchSchools(schoolName = undefined) {
     if (onboardingScreenIndex != 2) return;
-    const url = endpoints["/registration/fetchSchools"];
-    const qstring = { clientlocation: Cache.get('geohash') };
-    if (schoolName != undefined) qString["queryname"] = schoolName
-    const response = await AxiosSigned.get(url, undefined, qstring);
-    Cache.set("schools", JSON.stringify(response.data.rows))
-    return response.data.rows;
-}
+    
+    // fetch the geolocation
+    Geolocation.getCurrentPosition(async info => {
+        const { latitude, longitude } = info.coords;
+        const geohashValue = geohash.encode(latitude, longitude);
+        Cache.set('geohash', geohashValue);
 
+        // use the geohash value to get the schools
+        const url = endpoints["/registration/fetchSchools"];
+        const qstring = { clientlocation: geohashValue };
+        if (schoolName != undefined) qString["queryname"] = schoolName;
+        const response = await AxiosSigned.get(url, undefined, qstring);
+        Cache.set("schools", JSON.stringify(response.data.rows));
+        return response.data.rows;
+    });
+}
 async function submitSchool(geohash) {
     if (onboardingScreenIndex != 2) return;
     Cache.set("school", geohash);
@@ -72,7 +84,7 @@ async function submitOTP(otp) {
     if (onboardingScreenIndex != 3) return;
     if (!phoneNumber) phoneNumber = Cache.getString("phoneNumber");
     const url = endpoints["/verifypn/verifyotp"];
-    const qstring = { otp };
+    const qstring = { otp, phoneNumber };
     const response = await AxiosSigned.get(url, null, qstring);
     if (response.data.success || response.data.verified) {
         Cache.set("otp", otp);
@@ -89,7 +101,7 @@ async function verifyStatus() {
     if (onboardingScreenIndex != 4) return;
     var phoneNumber = Cache.get("phoneNumber")
     const url = endpoints["/verifypn/fetchStatus"]
-    const qString = {phoneNumber}
+    const qString = {phoneNumber, otp : Cache.getString("jwt")}
     const response = await AxiosSigned.get(url, null, qstring);
     if (response.data.success)
     {
@@ -200,6 +212,7 @@ async function submitPFP(filePath) {
             data: data,
             headers: {
                 'Content-Type': 'multipart/form-data', // important header when uploading files
+                'Authorization' : Cache.getString("jwt")
             },
         });
 
@@ -217,7 +230,7 @@ async function fetchAddFriendsOnboarding() {
     /// TODO: implement and cache
     const jwt = Cache.get("jwt");
     const url = endpoints["/onboarding/addfriends"];
-    const response = await AxiosSigned.get(url, {jwt});
+    const response = await AxiosSigned.get(url, jwt);
     if (response.success)
     {
         Cache.set("addFriendsOnboarding", JSON.stringify(response.data))

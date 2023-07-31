@@ -6,6 +6,9 @@ import jwt from "jsonwebtoken";
 
 var endpoints;
 
+const LoginToCognito = require("./LoginToCognito")
+
+
 async function fetchEndpoints() {
   endpoints = await Endpoints.fetch();
 }
@@ -15,7 +18,7 @@ fetchEndpoints();
 /// invoked by the user to refresh with either
 /// home, all, add, inbox, profile, invite
 async function fetch(screen = "home") {
-  await _login();
+  await LoginToCognito();
   const jwt = Cache.get("jwt");
   const url = endpoints["/refresh"];
   const pageKey = Cache.get("inboxData").pageKey;
@@ -69,8 +72,9 @@ async function fetch(screen = "home") {
   } else if (screen === "inbox") {
     // Cache data
     Cache.set("inboxData", response.data.data);
-    Cache.set("pageKey", response.data.pageKey);
-    return response.data.data;
+    if (response.data.nextPageKey) Cache.set("pageKey", response.data.nextPageKey);
+    Cache.set("unreadCount", response.data.unreadCount)
+    return {inboxData: response.data.inbox, unreadCount: response.data.unreadCount};
   } else if (screen === "profile") {
     if (req.query.requestedProfile == undefined) {
       // Cache data

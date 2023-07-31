@@ -8,6 +8,8 @@ import jwt from 'jsonwebtoken';
 
 const crypto = require('crypto');
 
+const LoginToCognito = require("./LoginToCognito")
+
 
 
 //// used to decrypt all Alby data
@@ -22,53 +24,9 @@ function decryptAES256(encryptedText, key) {
     return decrypted;
 }
 
-async function _login() {
-    if (Cache.getBoolean("isOnboarding") === false) return; // if onboarding do nothing
-
-    var phoneNumber = Cache.getString("phoneNumber");
-    var otp = Cache.getString("otp");
-    
-    // Add your User Pool Id and Client Id here
-    const userPoolId = 'your_user_pool_id';
-    const clientId = 'your_client_id';
-    
-    const poolData = { 
-        UserPoolId: userPoolId,
-        ClientId: clientId
-    };
-    
-    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-    
-    const authenticationData = {
-        Username: phoneNumber,
-        Password: otp,
-    };
-    
-    const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
-    
-    const userData = {
-        Username: phoneNumber,
-        Pool: userPool,
-    };
-    
-    const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-    
-    cognitoUser.authenticateUser(authenticationDetails, {
-        onSuccess: function (result) {
-            const jwt = result.getIdToken().getJwtToken();
-            // store jwt in Cache
-            Cache.set("jwt", jwt);
-        },
-
-        onFailure: function(err) {
-            console.error(`Error in login: ${err}`);
-        }
-    });
-}
-
 
 async function login() {
-    await _login();
+    await LoginToCognito();
     jwt = Cache.get("jwt")
   
     const url = endpoints["/login"];
@@ -148,4 +106,4 @@ async function handleAlbyData(data) {
     for (listener in listeners) listener(data)
 }
 
-exports.module = {login, logout, logoutAndDelete}
+exports.module = {login, logout, logoutAndDelete, addRealtimeListener, removeRealtimeListener}
