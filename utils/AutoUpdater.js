@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const KV = require('./KV.js')
 
-const isTesting = true;
+const isTesting = false;
 async function fetch() {
     
     if(!isTesting)downloadAllOrMissingImages(JSON.parse(await KV.fetch("Assets").data.value), "./downloads");
