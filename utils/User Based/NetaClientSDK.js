@@ -566,12 +566,12 @@ async function fetch(screen = "home") {
 //#endregion
 //#region LoginToCognito
 let userPoolId, clientId;
-async function fetch() {
+async function fetchStuff() {
     var { _userPoolId, _clientId } = await KV.fetch(["UserPoolId", ["ClientId"]])
     userPoolId = _userPoolId;
     clientId = _clientId;
 }
-fetch()
+fetchStuff()
 
 async function loginToCognito() {
     /// reset pagination keys for add and inbox
