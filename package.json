@@ -18,6 +18,8 @@
   "homepage": "https://github.com/Daxxboii/FileAutoUpdater#readme",
   "dependencies": {
     "aws4": "^1.12.0",
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "form-data": "^4.0.0",
+    "path": "^0.12.7"
   }
 }

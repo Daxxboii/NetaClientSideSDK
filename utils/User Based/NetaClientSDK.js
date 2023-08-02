@@ -1,15 +1,20 @@
-
+//#region imports
 const Cache = require("../Cache.js");
 const Endpoints = require("../Endpoints.js");
 const Alby = require("./Notifications/In-App/60Sec Workaround/Ably.js");
 const AxiosSigned = require("../AxiosSigned.js");
-import { CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import jwt from 'jsonwebtoken';
 
 import Geolocation from '@react-native-community/geolocation';
 import geohash from 'latlon-geohash';
+
+
 const path = require('path');
 const mime = require('mime-types');
+const FormData = require('form-data');
+const fs = require('fs');
+const axios = require('axios');
+
 
 const crypto = require('crypto');
 
@@ -19,6 +24,27 @@ const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 const Cache = require('../Cache.js');
 const KV = require('../KV.js');
 
+
+
+var isOnboarding;
+var onboardingScreenIndex = 0;
+var endpoints;
+
+async function _fetchOnboardingCache() {
+    isOnboarding = Cache.getBoolean("isOnboarding")
+    onboardingScreenIndex = Cache.getInt("onboardingScreenIndex")
+
+    if (isOnboarding == undefined) Cache.set("isOnboarding", isOnboarding)
+    if (onboardingScreenIndex == undefined) Cache.set("onboardingScreenIndex", onboardingScreenIndex)
+}
+
+async function fetchEndpoints() {
+    endpoints = await Endpoints.fetch();
+}
+
+_fetchOnboardingCache()
+fetchEndpoints()
+//#endregion
 // #region AuthenticatedUserActions
 /// invoked to invite a user
 /// context = "add", "invite", "share"
@@ -65,30 +91,8 @@ async function inviteUser(phoneNumber, context = "add") {
         return { success: false, message: error.message || "An error occurred while inviting the user" };
     }
 }
-
-
-
 // #endregion
 //#region RegistrationFlow
-var isOnboarding = true;
-var onboardingScreenIndex = 0;
-var endpoints;
-
-async function _fetchCache() {
-    isOnboarding = Cache.getBoolean("isOnboarding")
-    onboardingScreenIndex = Cache.getInt("onboardingScreenIndex")
-
-    if (isOnboarding == undefined) Cache.set("isOnboarding", isOnboarding)
-    if (onboardingScreenIndex == undefined) Cache.set("onboardingScreenIndex", onboardingScreenIndex)
-}
-
-async function fetchEndpoints() {
-    endpoints = await Endpoints.fetch();
-}
-
-_fetchCache()
-fetchEndpoints()
-
 async function submitAge(age) {
     if (onboardingScreenIndex != 0) return;
     Cache.set("age", age);
@@ -255,15 +259,15 @@ async function submitPFP(filePath) {
     onboardingScreenIndex++;
     Cache.set("onboardingScreenIndex", onboardingScreenIndex);
     try {
-        const file = await RNFS.readFile(filePath, 'base64');  // read file as base64
-        const filename = path.basename(filePath);  // get the filename with extension
-        const mimetype = mime.lookup(filePath);  // get the MIME type of the file
+        const file = await fs.readFile(filePath, { encoding: 'base64' }); // read file as base64
+        const buffer = Buffer.from(file, 'base64'); // convert base64 to buffer
+        const filename = path.basename(filePath); // get the filename with extension
+        const mimetype = mime.lookup(filePath); // get the MIME type of the file
 
-        const data = new FormData();  // create form data
-        data.append('file', {
-            name: filename,  // provide actual file name
-            type: mimetype || 'application/octet-stream',  // provide actual file type or default to 'application/octet-stream'
-            data: file  // file data in base64 format
+        const data = new FormData(); // create form data
+        data.append('file', buffer, {
+            filename: filename, // provide actual file name
+            contentType: mimetype || 'application/octet-stream', // provide actual file type or default to 'application/octet-stream'
         });
 
         const response = await axios({
@@ -271,8 +275,8 @@ async function submitPFP(filePath) {
             url: endpoints["/uploadpfp"],
             data: data,
             headers: {
-                'Content-Type': 'multipart/form-data', // important header when uploading files
-                'Authorization': Cache.getString("jwt")
+                ...data.getHeaders(), // append form-data specific headers
+                'Authorization': Cache.getString("jwt") // your custom authorization header
             },
         });
 
@@ -315,18 +319,35 @@ async function fetchAllAddFriendsOnboardingPages() {
     return data;
 }
 
+//Example
+//const contactsList = [{ Fname: 'John', Lname: 'Doe', favorite: true, pfp: 'C:/Users/Daxx/Downloads/mummy.png', }];
 async function uploadUserContacts(username, contactsList) {
     const url = endpoints["/uploadUserContacts"];
-    const qstring = { username, contactsList };
-    const response = await AxiosSigned.put(url, Cache.get('jwt'), qstring);
-    return response.data;
-}
+    try {
+        const form = new FormData();
 
-async function uploadEmojiContacts(username, contactsList) {
-    const url = endpoints["/uploadEmojiContacts"];
-    const qstring = { username, contactsList };
-    const response = await AxiosSigned.put(url, Cache.get('jwt'), qstring);
-    return response.data;
+        // Add username and contacts without profile pictures to the form data
+        form.append('username', username);
+        form.append('contactsList', JSON.stringify(contactsList.map(({ pfp, ...rest }) => rest)));
+
+        // Add profile pictures to the form data
+        contactsList.forEach((contact, index) => {
+            if (contact.pfp) {
+                form.append(`profilePicture${index}`, fs.createReadStream(contact.pfp));
+            }
+        });
+
+        const response = await axios.put(url, form, {
+            headers: {
+                ...form.getHeaders(),
+            },
+        });
+
+        console.log('Server response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Error sending contact list:', error.message);
+    }
 }
 
 //#endregion
@@ -423,7 +444,6 @@ async function fetch(screen = "home") {
     }
 }
 
-exports.module = { fetch }
 //#endregion
 //#region LoginToCognito
 let userPoolId, clientId;
@@ -477,7 +497,7 @@ async function loginToCognito() {
     });
 }
 
-module.exports = loginToCognito;
+
 
 
 //#endregion
@@ -580,10 +600,14 @@ async function handleAlbyData(data) {
     for (listener in listeners) listener(data)
 }
 
-exports.module = { login, logout, logoutAndDelete, addRealtimeListener, removeRealtimeListener }
+//#endregion
 
-        //#endregion
+//#region Analytics 
+async void SendAnalytics(){
 
+}
+
+//#endregion
 module.exports = {
     inviteUser,
     fetchCache,
@@ -606,4 +630,12 @@ module.exports = {
     back,
     login,
     uploadEmojiContacts,
-    uploadUserContacts }
+    uploadUserContacts,
+    login,
+    logout,
+    logoutAndDelete,
+    addRealtimeListener,
+    removeRealtimeListener,
+    loginToCognito,
+    fetch
+}

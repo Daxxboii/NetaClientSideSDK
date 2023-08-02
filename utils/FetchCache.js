@@ -3,14 +3,13 @@ const Cache = require('./Cache')
 /// invoked to fetch the schools cache or undefined
 function fetchSchoolsCache() {
     return JSON.parse(Cache.getString("schools"))
-  }
-  
-  function fetchOnboardingAddFriendsCache()
-  {
+}
+
+function fetchOnboardingAddFriendsCache() {
     return JSON.parse(Cache.getString("addFriendsOnboarding"))
-  }
-  
-  async function fetchCache() {
+}
+
+async function fetchCache() {
     const isOnboarding = Cache.getBoolean("isOnboarding");
     const onboardingScreenIndex = Cache.getInt("onboardingScreenIndex");
     const jwt = Cache.getString("jwt");
@@ -30,7 +29,7 @@ function fetchSchoolsCache() {
     const albyDecryptionKey = Cache.getString("albyDecryptionKey");
     const loginFuncCache = JSON.parse(Cache.getString("loginFuncCache"));
     const requestPolls = Cache.get("requestPolls");
-  
+
     return {
         isOnboarding,
         onboardingScreenIndex,
@@ -52,6 +51,6 @@ function fetchSchoolsCache() {
         loginFuncCache,
         requestPolls
     };
-  }
+}
 
-  exports = fetchCache;
+module.exports = { fetchCache };
