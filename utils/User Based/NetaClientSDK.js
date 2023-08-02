@@ -91,6 +91,125 @@ async function inviteUser(phoneNumber, context = "add") {
         return { success: false, message: error.message || "An error occurred while inviting the user" };
     }
 }
+
+async function OnPollRevealPartial(messageUID) {
+    const QueryString = { messageUID: messageUID };
+    const endpoint = endpoints["/OnPollRevealedPartial"];
+    const jwt = Cache.getString("jwt");
+    const res = await AxiosSigned.get(endpoint, jwt, QueryString, null);
+    return res;
+}
+async function OnPollReveal(messageUID) {
+    const QueryString = { messageUID: messageUID };
+    const endpoint = endpoints["/OnPollRevealed"];
+    const jwt = Cache.getString("jwt");
+    const res = await AxiosSigned.get(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function ReadInbox(separator, messages) {
+    const QueryString = { messages: messages, separator: separator };
+    const endpoint = endpoints["/readInbox"];
+    const jwt = Cache.getString("jwt");
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function RegisterPolls(polls) {
+    const endpoint = endpoints["/registerPolls"];
+    const jwt = Cache.getString("jwt");
+    const QueryString = { polls: polls };
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function FetchPollsNow() {
+    const endpoint = endpoints["/fetchPollsNow"];
+    const jwt = Cache.getString("jwt");
+    const res = await AxiosSigned.post(endpoint, jwt, null, null);
+    return res;
+}
+
+// #endregion
+//#region Friend System
+async function OnFriendRequest(friendPN) {
+    const QueryString = { friend: friendPN };
+    const endpoint = endpoints["/friends/request"];
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function AcceptFriendRequest(friendPN) {
+    const endpoint = endpoints["/friends/accept"];
+    const QueryString = { friend: friendPN };
+
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function HideFriendRequestfriendPN(friendPN) {
+    const endpoint = endpoints["/friends/hide"];
+    const QueryString = { friend: friendPN };
+
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function AddFriend(friendPN) {
+    const endpoint = endpoints["/friends/add"];
+    const QueryString = { friend: friendPN };
+
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function RemoveFriend(friendPN) {
+    const endpoint = endpoints["/friends/remove"];
+    const QueryString = { friend: friendPN };
+
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+async function BlockFriend(friendPN) {
+    const endpoint = endpoints["/friends/remove"];
+    const QueryString = { friend: friendPN };
+
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, QueryString, null);
+    return res;
+}
+
+async function ResetBlockList() {
+    const endpoint = endpoints["/friends/resetBlockList"];
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, null, null);
+    return res;
+
+}
+
+async function ResetHideList() {
+    const endpoint = endpoints["/friends/resetHideList"];
+    const jwt = Cache.getString("jwt");
+
+    const res = await AxiosSigned.post(endpoint, jwt, null, null);
+    return res;
+
+}
+
+
+
 // #endregion
 //#region RegistrationFlow
 async function submitAge(age) {
@@ -611,6 +730,8 @@ async function SendAnalytics(event) {
 }
 
 //#endregion
+
+
 module.exports = {
     inviteUser,
     fetchCache,
