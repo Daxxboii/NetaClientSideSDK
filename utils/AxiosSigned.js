@@ -20,7 +20,7 @@ async function get(uri, jwt = null, qString = null, body = null) {
     let options = {
         method: 'GET',
         url: uri,
-        params: qStringJson,  // query string in the form of JSON
+        params: qString,  // query string in the form of JSON
         data: body,  // body data
     };
 

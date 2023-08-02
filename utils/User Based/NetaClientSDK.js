@@ -601,10 +601,13 @@ async function handleAlbyData(data) {
 }
 
 //#endregion
-
 //#region Analytics 
-async void SendAnalytics(){
-
+//event = { event: "Ni", phoneNumber: "734873487348", value: "ahshshs" }
+async function SendAnalytics(event) {
+    const endpoint = endpoints["/RecordEvent"];
+    const jwt = Cache.getString("jwt");
+    const res = await AxiosSigned.get(endpoint, jwt, event, null);
+    return res;
 }
 
 //#endregion
@@ -637,5 +640,6 @@ module.exports = {
     addRealtimeListener,
     removeRealtimeListener,
     loginToCognito,
-    fetch
+    fetch,
+    SendAnalytics
 }
