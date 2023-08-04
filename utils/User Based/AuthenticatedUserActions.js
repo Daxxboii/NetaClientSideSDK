@@ -52,15 +52,9 @@ async function inviteUser(phoneNumber, context = "add") {
         return { success: false, message: error.message || "An error occurred while inviting the user" };
     }
 }
-async function OnPollRevealPartial(messageUID) {
-    const QueryString = { messageUID: messageUID };
-    const endpoint = endpoints["/OnPollRevealedPartial"];
-    const jwt = Cache.getString("jwt");
-    const res = await AxiosSigned.get(endpoint, jwt, QueryString, null);
-    return res;
-}
-async function OnPollReveal(messageUID) {
-    const QueryString = { messageUID: messageUID };
+
+async function OnPollReveal(messageUID,answerFirstLetter) {
+    const QueryString = { messageUID: messageUID, answerFirstLetter: answerFirstLetter };
     const endpoint = endpoints["/OnPollRevealed"];
     const jwt = Cache.getString("jwt");
     const res = await AxiosSigned.get(endpoint, jwt, QueryString, null);
@@ -75,7 +69,7 @@ async function ReadInbox(separator, messages) {
     return res;
 }
 
-async function RegisterPolls(polls) {
+async function DispatchVote(polls) {
     const endpoint = endpoints["/registerPolls"];
     const jwt = Cache.getString("jwt");
     const QueryString = { polls: polls };
@@ -93,6 +87,6 @@ exports.module = {inviteUser,
     OnPollRevealPartial,
     OnPollReveal,
     ReadInbox,
-    RegisterPolls,
+    DispatchVote,
     FetchPollsNow
 }
