@@ -52,15 +52,50 @@ async function inviteUser(phoneNumber, context = "add") {
         return { success: false, message: error.message || "An error occurred while inviting the user" };
     }
 }
-async function OnPollRevealPartial(messageUID) {
-    const QueryString = { messageUID: messageUID };
-    const endpoint = endpoints["/OnPollRevealedPartial"];
-    const jwt = Cache.getString("jwt");
-    const res = await AxiosSigned.get(endpoint, jwt, QueryString, null);
-    return res;
+async function fetchInvite(UID) {
+    try {
+        // Check if onboarding is still happening
+        if (isOnboarding) {
+            console.error("User is still onboarding");
+            return;
+        }
+
+        // Fetch jwt from cache
+        const jwt = Cache.getString("jwt");
+        if (!jwt) {
+            console.error("No jwt in the cache");
+            return;
+        }
+
+        // Prepare request url
+        const url = endpoints["/invitations/fetch"];
+
+        // Prepare axios configuration
+        const axiosConfig = {
+            headers: {
+                Authorization: 'Bearer ' + jwt
+            },
+            params: {
+               uid:UID
+            }
+        };
+
+        // Send get request
+        const response = await AxiosSigned.get(url, axiosConfig);
+
+        if (response.data.success) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, message: response.data.message || "An error occurred while fetching the invite" };
+        }
+
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: error.message || "An error occurred while fetching the invitation" };
+    }
 }
-async function OnPollReveal(messageUID) {
-    const QueryString = { messageUID: messageUID };
+async function OnPollReveal(messageUID,answerFirstLetter) {
+    const QueryString = { messageUID: messageUID, answerFirstLetter: answerFirstLetter };
     const endpoint = endpoints["/OnPollRevealed"];
     const jwt = Cache.getString("jwt");
     const res = await AxiosSigned.get(endpoint, jwt, QueryString, null);
@@ -75,7 +110,7 @@ async function ReadInbox(separator, messages) {
     return res;
 }
 
-async function RegisterPolls(polls) {
+async function DispatchVote(polls) {
     const endpoint = endpoints["/registerPolls"];
     const jwt = Cache.getString("jwt");
     const QueryString = { polls: polls };
@@ -83,6 +118,26 @@ async function RegisterPolls(polls) {
     return res;
 }
 
+async function RequestDeletion() {
+    const jwt = Cache.getString("jwt");
+    if (!jwt) {
+        console.error("No jwt in the cache");
+        return;
+    }
+    const url = endpoints["/requestDeletion"];
+    const res = await AxiosSigned.post(url, jwt, null, null);
+    return res;
+}
+async function DisableDeletion() {
+    const jwt = Cache.getString("jwt");
+    if (!jwt) {
+        console.error("No jwt in the cache");
+        return;
+    }
+    const url = endpoints["/disableDeletion"];
+    const res = await AxiosSigned.post(url, jwt, null, null);
+    return res;
+}
 async function FetchPollsNow() {
     const endpoint = endpoints["/fetchPollsNow"];
     const jwt = Cache.getString("jwt");
@@ -93,6 +148,9 @@ exports.module = {inviteUser,
     OnPollRevealPartial,
     OnPollReveal,
     ReadInbox,
-    RegisterPolls,
-    FetchPollsNow
+    DispatchVote,
+    FetchPollsNow,
+    fetchInvite,
+    DisableDeletion,
+    RequestDeletion
 }
