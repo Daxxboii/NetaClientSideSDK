@@ -29,30 +29,6 @@ import {
 } from "./utils/User Based/LoginLogout";
 import { loginToCognito } from "./utils/User Based/LoginToCognito";
 import {
-<<<<<<< HEAD
-  fetchCache,
-  isOnboarding,
-  submitPFP,
-  fetchAddFriendsOnboarding,
-  verifyStatus,
-  submitAge,
-  submitGrade,
-  fetchSchools,
-  submitSchool,
-  fetchAllAddFriendsOnboardingPages,
-  submitPhoneNumber,
-  submitOTP,
-  submitFirstName,
-  submitLastName,
-  submitUsername,
-  submitGender,
-  checkSubmitProfile,
-  handleSubmittalSuccess,
-  back as backRegistration,
-  login as loginRegistration,
-  uploadEmojiContacts,
-  uploadUserContacts,
-=======
     fetchCache,
     isOnboarding,
     submitPFP,
@@ -75,56 +51,10 @@ import {
     login as loginRegistration,
     uploadEmojiContacts,
     uploadUserContacts,
->>>>>>> c83ec33755ed95af28fc329142347942424de6ef
 } from "./utils/User Based/RegistrationFlow";
 import { fetch } from "./utils/User Based/Refresh";
 
 export {
-<<<<<<< HEAD
-  SendAnalytics,
-  inviteUser,
-  OnPollReveal,
-  OnPollRevealedPartial,
-  ReadInbox,
-  RegisterPolls,
-  FetchPollsNow,
-  OnFriendRequest,
-  AcceptFriendRequest,
-  HideFriendRequestfriendPN,
-  AddFriend,
-  RemoveFriend,
-  BlockFriend,
-  ResetBlockList,
-  loginUtil,
-  logout,
-  logoutAndDelete,
-  addRealtimeListener,
-  removeRealtimeListener,
-  loginToCognito,
-  fetchCache,
-  isOnboarding,
-  submitPFP,
-  fetchAddFriendsOnboarding,
-  verifyStatus,
-  submitAge,
-  submitGrade,
-  fetchSchools,
-  submitSchool,
-  fetchAllAddFriendsOnboardingPages,
-  submitPhoneNumber,
-  submitOTP,
-  submitFirstName,
-  submitLastName,
-  submitUsername,
-  submitGender,
-  checkSubmitProfile,
-  handleSubmittalSuccess,
-  backRegistration,
-  loginRegistration,
-  uploadEmojiContacts,
-  uploadUserContacts,
-  fetch,
-=======
     SendAnalytics,
     inviteUser,
     OnPollReveal,
@@ -169,5 +99,4 @@ export {
     uploadUserContacts,
     fetch,
     fetchInvite
->>>>>>> c83ec33755ed95af28fc329142347942424de6ef
 };
